@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enumeração para Papéis (RBAC)
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+// Tabela de Usuários
+model User {
+  id          String       @id @default(uuid())
+  name        String
+  email       String       @unique
+  password    String
+  role        Role         @default(STUDENT)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  enrollments Enrollment[]
+}
+
+// Tabela de Matrículas
+model Enrollment {
+  id        String   @id @default(uuid())
+  userId    String
+  courseId  String   // ID que virá do MongoDB
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId]) // Impede matrícula duplicada no mesmo curso
+}
