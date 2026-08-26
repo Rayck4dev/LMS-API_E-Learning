@@ -99,6 +99,7 @@ classDiagram
     CreateCourseDto ..> Course : cria
     CreateEnrollmentDto ..> Enrollment : cria
 ```
+
 ---
 
 ### 2. Diagrama Entidade-Relacionamento (DER / ERD)
@@ -258,3 +259,7 @@ npm run test:e2e
 npm run test:cov
 
 ```
+--- 
+## 📝 Licença
+
+Este projeto está sob a licença [MIT](LICENSE).
