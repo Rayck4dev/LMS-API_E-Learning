@@ -4,7 +4,7 @@
 
 # 🎓 LMS API - Plataforma de Gestão de Aprendizado
 
-API RESTful escalável para gerenciamento de cursos, alunos e matrículas desenvolvida com **NestJS**. O projeto implementa uma **Arquitetura em Camadas** combinada com **Persistência Poliglota** (*Polyglot Persistence*), utilizando **PostgreSQL** para dados transacionais e **MongoDB** para dados dinâmicos.
+API RESTful escalável para gerenciamento de cursos, alunos e matrículas desenvolvida com **NestJS**. O projeto implementa uma **Arquitetura em Camadas** combinada com **Persistência Poliglota** (_Polyglot Persistence_), utilizando **PostgreSQL** para dados transacionais e **MongoDB** para dados dinâmicos.
 
 ---
 
@@ -12,16 +12,133 @@ API RESTful escalável para gerenciamento de cursos, alunos e matrículas desenv
 
 Abaixo está o mapeamento dos requisitos solicitados para a entrega:
 
-* **[x] Arquitetura Definida:** Arquitetura em Camadas (Controllers, Services, Repositories/Models).
-* **[x] Modelagem de Dados:** Estrutura relacional (PostgreSQL) e não-relacional (MongoDB) integrada.
-* **[x] Autenticação e Autorização:** JWT com controle de acesso baseado em papéis (RBAC - *STUDENT vs INSTRUCTOR*).
-* **[x] Resiliência e Idempotência:** Exigência do cabeçalho `idempotency-key` em rotas `POST` críticas.
-* **[x] Tratamento Global de Exceções:** Exception Filter padronizando respostas em **RFC 7807 (Problem Details)**.
-* **[x] Observabilidade Básica:** Interceptor de logs estruturados em JSON com rastreamento via `Correlation-ID`.
-* **[x] Controle de Vazão:** *Rate Limiting* ativado em rotas de autenticação e rotas públicas.
-* **[x] Contrato de API:** Documentação viva via **OpenAPI / Swagger** acessível em `/api/docs`.
-* **[x] Infraestrutura como Código:** `docker-compose.yml` para subida da API e dos bancos com um único comando.
-* **[x] Documentação Arquitetural:** Diagramas de Contexto, Contêineres e Componentes no modelo **C4 Model**.
+- **[x] Arquitetura Definida:** Arquitetura em Camadas (Controllers, Services, Repositories/Models).
+- **[x] Modelagem de Dados:** Estrutura relacional (PostgreSQL) e não-relacional (MongoDB) integrada.
+- **[x] Autenticação e Autorização:** JWT com controle de acesso baseado em papéis (RBAC - _STUDENT vs INSTRUCTOR_).
+- **[x] Resiliência e Idempotência:** Exigência do cabeçalho `idempotency-key` em rotas `POST` críticas.
+- **[x] Tratamento Global de Exceções:** Exception Filter padronizando respostas em **RFC 7807 (Problem Details)**.
+- **[x] Observabilidade Básica:** Interceptor de logs estruturados em JSON com rastreamento via `Correlation-ID`.
+- **[x] Controle de Vazão:** _Rate Limiting_ ativado em rotas de autenticação e rotas públicas.
+- **[x] Contrato de API:** Documentação viva via **OpenAPI / Swagger** acessível em `/api/docs`.
+- **[x] Infraestrutura como Código:** `docker-compose.yml` para subida da API e dos bancos com um único comando.
+- **[x] Documentação Arquitetural:** Diagramas de Contexto, Contêineres e Componentes no modelo **C4 Model**.
+
+---
+
+## 📊 Modelagem de Dados
+
+### 1. Diagrama de Classes UML
+
+Diagrama representando as entidades do domínio, enums, DTOs de entrada validados com `class-validator` e seus relacionamentos:
+
+```mermaid
+classDiagram
+    direction TB
+
+    class Role {
+        <<enumeration>>
+        STUDENT
+        INSTRUCTOR
+        ADMIN
+    }
+
+    class User {
+        +UUID id
+        +String name
+        +String email
+        +String password
+        +Role role
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class Course {
+        +ObjectId id
+        +String title
+        +String description
+        +Number price
+        +UUID instructorId
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    class Enrollment {
+        +UUID id
+        +UUID studentId
+        +ObjectId courseId
+        +Date createdAt
+    }
+
+    class CreateUserDto {
+        +String name
+        +String email
+        +String password
+        +Role role
+    }
+
+    class CreateCourseDto {
+        +String title
+        +String description
+        +Number price
+        +UUID instructorId
+    }
+
+    class CreateEnrollmentDto {
+        +UUID studentId
+        +ObjectId courseId
+    }
+
+    %% Relacionamentos de Domínio
+    User "1" -- "0..*" Course : ministra (como Instrutor)
+    User "1" -- "0..*" Enrollment : realiza (como Aluno)
+    Course "1" -- "0..*" Enrollment : possui
+    User --> Role : possui
+
+    %% Relações com DTOs de Entrada
+    CreateUserDto ..> User : cria
+    CreateCourseDto ..> Course : cria
+    CreateEnrollmentDto ..> Enrollment : cria
+```
+---
+
+### 2. Diagrama Entidade-Relacionamento (DER / ERD)
+
+Visão lógica da integração poliglota entre o modelo relacional (PostgreSQL) e o modelo orientado a documentos (MongoDB):
+
+```mermaid
+erDiagram
+    USERS ||--o{ COURSES : "ministra (instructorId)"
+    USERS ||--o{ ENROLLMENTS : "realiza (studentId)"
+    COURSES ||--o{ ENROLLMENTS : "contém (courseId)"
+
+    USERS {
+        uuid id PK "PostgreSQL"
+        string name
+        string email UK
+        string password
+        enum role "STUDENT | INSTRUCTOR | ADMIN"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    COURSES {
+        objectId id PK "MongoDB"
+        string title
+        string description
+        number price
+        uuid instructorId FK "Referência lógica -> USERS.id"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    ENROLLMENTS {
+        uuid id PK "PostgreSQL / MongoDB"
+        uuid studentId FK "Referência lógica -> USERS.id"
+        objectId courseId FK "Referência lógica -> COURSES.id"
+        datetime createdAt
+    }
+
+```
 
 ---
 
@@ -35,7 +152,7 @@ C4Context
 
     Person(user, "Usuário", "Aluno ou Instrutor que consome a API")
     System(lms_api, "LMS API", "Gerencia usuários, autenticação, cursos e matrículas")
-    System_Ext(email, "Serviço de Notificação", "Envio de e-mails de confirmação (ex: AWS SES)")
+    System_Ext(email, "Serviço de Notificação", "Envio de e-mails de confirmação")
 
     Rel(user, lms_api, "Requisições REST", "HTTPS / JSON")
     Rel(lms_api, email, "Dispara e-mails", "SMTP / API")
@@ -59,7 +176,7 @@ C4Container
     }
 
     Rel(user, api, "HTTP REST", "HTTPS")
-    Rel(api, postgres, "Persiste Usuários", "Prisma / TypeORM")
+    Rel(api, postgres, "Persiste Usuários", "PrismaORM")
     Rel(api, mongo, "Persiste Cursos e Matrículas", "Mongoose")
 
 ```
@@ -93,8 +210,8 @@ C4Component
 
 ## 💡 Decisões de Arquitetura e Justificativa de Bancos
 
-* **PostgreSQL (Relacional):** Escolhido para **Usuários** e **Autenticação** por exigir garantias **ACID**, consistência forte, e-mails únicos e integridade referencial nativa.
-* **MongoDB (Não-Relacional):** Escolhido para **Cursos** e **Matrículas**, permitindo esquema flexível para conteúdos dinâmicos (aulas, vídeos, quizzes) e buscas rápidas em documentos aninhados sem dependência de `JOINs` custosos.
+- **PostgreSQL (Relacional):** Escolhido para **Usuários** e **Autenticação** por exigir garantias **ACID**, consistência forte, e-mails únicos e integridade referencial nativa.
+- **MongoDB (Não-Relacional):** Escolhido para **Cursos** e **Matrículas**, permitindo esquema flexível para conteúdos dinâmicos (aulas, vídeos, quizzes) e buscas rápidas em documentos aninhados sem dependência de `JOINs` custosos.
 
 ---
 
@@ -124,7 +241,7 @@ npm run start:dev
 
 Após iniciar a aplicação, acesse o contrato interativo da API no navegador:
 
-* `http://localhost:3000/api`
+- `http://localhost:3000/api/docs`
 
 ---
 
