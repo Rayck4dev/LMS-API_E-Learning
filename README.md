@@ -2,7 +2,22 @@
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-# 🎓 LMS API - Plataforma de Gestão de Aprendizado
+<h1 align="center">🎓 LMS API - Plataforma de Gestão de Aprendizado</h1>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma" />
+  <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" alt="Swagger" />
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License MIT" />
+</p>
+
+---
+
+## 📖 Sobre o Projeto
 
 API RESTful escalável para gerenciamento de cursos, alunos e matrículas desenvolvida com **NestJS**. O projeto implementa uma **Arquitetura em Camadas** combinada com **Persistência Poliglota** (_Polyglot Persistence_), utilizando **PostgreSQL** para dados transacionais e **MongoDB** para dados dinâmicos.
 
@@ -12,16 +27,30 @@ API RESTful escalável para gerenciamento de cursos, alunos e matrículas desenv
 
 Abaixo está o mapeamento dos requisitos solicitados para a entrega:
 
-- **[x] Arquitetura Definida:** Arquitetura em Camadas (Controllers, Services, Repositories/Models).
-- **[x] Modelagem de Dados:** Estrutura relacional (PostgreSQL) e não-relacional (MongoDB) integrada.
-- **[x] Autenticação e Autorização:** JWT com controle de acesso baseado em papéis (RBAC - _STUDENT vs INSTRUCTOR_).
-- **[x] Resiliência e Idempotência:** Exigência do cabeçalho `idempotency-key` em rotas `POST` críticas.
-- **[x] Tratamento Global de Exceções:** Exception Filter padronizando respostas em **RFC 7807 (Problem Details)**.
-- **[x] Observabilidade Básica:** Interceptor de logs estruturados em JSON com rastreamento via `Correlation-ID`.
-- **[x] Controle de Vazão:** _Rate Limiting_ ativado em rotas de autenticação e rotas públicas.
-- **[x] Contrato de API:** Documentação viva via **OpenAPI / Swagger** acessível em `/api/docs`.
-- **[x] Infraestrutura como Código:** `docker-compose.yml` para subida da API e dos bancos com um único comando.
-- **[x] Documentação Arquitetural:** Diagramas de Contexto, Contêineres e Componentes no modelo **C4 Model**.
+- [x] **Arquitetura Definida:** Arquitetura em Camadas (Controllers, Services, Repositories/Models).
+- [x] **Modelagem de Dados:** Estrutura relacional (PostgreSQL) e não-relacional (MongoDB) integrada.
+- [x] **Autenticação e Autorização:** JWT com controle de acesso baseado em papéis (RBAC - _STUDENT vs INSTRUCTOR_).
+- [x] **Resiliência e Idempotência:** Exigência do cabeçalho `idempotency-key` em rotas `POST` críticas.
+- [x] **Tratamento Global de Exceções:** Exception Filter padronizando respostas em **RFC 7807 (Problem Details)**.
+- [x] **Observabilidade Básica:** Interceptor de logs estruturados em JSON com rastreamento via `Correlation-ID`.
+- [x] **Controle de Vazão:** _Rate Limiting_ ativado em rotas de autenticação e rotas públicas.
+- [x] **Contrato de API:** Documentação viva via **OpenAPI / Swagger** acessível em `/api/docs`.
+- [x] **Infraestrutura como Código:** `docker-compose.yml` para subida da API e dos bancos com um único comando.
+- [x] **Documentação Arquitetural:** Diagramas de Contexto, Contêineres e Componentes no modelo **C4 Model**.
+
+---
+
+## 🚀 Endpoints Principais & Controle de Acesso (RBAC)
+
+| Módulo | Método | Endpoint | Acesso | Descrição |
+| :--- | :--- | :--- | :--- | :--- |
+| **Auth** | `POST` | `/auth/login` | Público | Autentica usuário e retorna o Token JWT |
+| **Users** | `POST` | `/users` | Público | Cadastra um novo usuário no PostgreSQL (`STUDENT` / `INSTRUCTOR`) |
+| **Users** | `GET` | `/users` | Autenticado | Lista todos os usuários cadastrados |
+| **Courses** | `POST` | `/courses` | `INSTRUCTOR` | Cria um novo curso (Exige `idempotency-key`) |
+| **Courses** | `GET` | `/courses` | Público | Lista todos os cursos disponíveis |
+| **Enrollments** | `POST` | `/enrollments` | Autenticado | Matricula um aluno em um curso (Exige `idempotency-key`) |
+| **Health** | `GET` | `/` | Público | Endpoint de Health Check da API |
 
 ---
 
@@ -88,16 +117,15 @@ classDiagram
         +ObjectId courseId
     }
 
-    %% Relacionamentos de Domínio
     User "1" -- "0..*" Course : ministra (como Instrutor)
     User "1" -- "0..*" Enrollment : realiza (como Aluno)
     Course "1" -- "0..*" Enrollment : possui
     User --> Role : possui
 
-    %% Relações com DTOs de Entrada
     CreateUserDto ..> User : cria
     CreateCourseDto ..> Course : cria
     CreateEnrollmentDto ..> Enrollment : cria
+
 ```
 
 ---
@@ -211,14 +239,34 @@ C4Component
 
 ## 💡 Decisões de Arquitetura e Justificativa de Bancos
 
-- **PostgreSQL (Relacional):** Escolhido para **Usuários** e **Autenticação** por exigir garantias **ACID**, consistência forte, e-mails únicos e integridade referencial nativa.
-- **MongoDB (Não-Relacional):** Escolhido para **Cursos** e **Matrículas**, permitindo esquema flexível para conteúdos dinâmicos (aulas, vídeos, quizzes) e buscas rápidas em documentos aninhados sem dependência de `JOINs` custosos.
+* **PostgreSQL (Relacional):** Escolhido para **Usuários** e **Autenticação** por exigir garantias **ACID**, consistência forte, e-mails únicos e integridade referencial nativa.
+* **MongoDB (Não-Relacional):** Escolhido para **Cursos** e **Matrículas**, permitindo esquema flexível para conteúdos dinâmicos (aulas, vídeos, quizzes) e buscas rápidas em documentos aninhados sem dependência de `JOINs` custosos.
 
 ---
 
 ## 🛠️ Infraestrutura e Execução
 
-### 1. Subir Infraestrutura (Docker Compose)
+### 1. Configurar Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto com base no `.env.example`:
+
+```env
+# PostgreSQL Configs
+POSTGRES_USER=seu-usuario
+POSTGRES_PASSWORD=sua-senha
+POSTGRES_DB=seu-banco
+
+# MongoDB Configs
+MONGO_INITDB_ROOT_USERNAME=seu-usuario
+MONGO_INITDB_ROOT_PASSWORD=sua-senha
+
+DATABASE_URL="postgresql://seu-usuario:sua-senha@seu-host:5432/seu-banco?schema=public"
+MONGO_URI="mongodb://seu-usuario:sua-senha@seu-host:27017/seu-banco?authSource=admin"
+
+JWT_SECRET="sua-chave-secreta"
+```
+
+### 2. Subir Infraestrutura (Docker Compose)
 
 Suba a API e os bancos de dados (PostgreSQL + MongoDB) com um único comando:
 
@@ -227,22 +275,25 @@ docker compose up -d
 
 ```
 
-### 2. Executar a Aplicação Localmente
+### 3. Executar a Aplicação Localmente
 
 ```bash
 # Instalar dependências
 npm install
+
+# Rodar migrations do Prisma
+npx prisma migrate dev
 
 # Modo de desenvolvimento
 npm run start:dev
 
 ```
 
-### 3. Documentação Swagger (OpenAPI)
+### 4. Documentação Swagger (OpenAPI)
 
 Após iniciar a aplicação, acesse o contrato interativo da API no navegador:
 
-- `http://localhost:3000/api/docs`
+* 🔗 `http://localhost:3000/api/docs`
 
 ---
 
@@ -259,7 +310,9 @@ npm run test:e2e
 npm run test:cov
 
 ```
---- 
+
+---
+
 ## 📝 Licença
 
-Este projeto está sob a licença [MIT](LICENSE).
+Este projeto está sob a licença [MIT](https://www.google.com/search?q=LICENSE).
