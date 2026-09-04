@@ -10,6 +10,8 @@
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma" />
   <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white" alt="Nginx" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" alt="Swagger" />
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License MIT" />
@@ -36,7 +38,16 @@ Abaixo está o mapeamento dos requisitos solicitados para a entrega:
 - [x] **Controle de Vazão:** _Rate Limiting_ ativado em rotas de autenticação e rotas públicas.
 - [x] **Contrato de API:** Documentação viva via **OpenAPI / Swagger** acessível em `/api/docs`.
 - [x] **Infraestrutura como Código:** `docker-compose.yml` para subida da API e dos bancos com um único comando.
-- [x] **Documentação Arquitetural:** Diagramas de Contexto, Contêineres e Componentes no modelo **C4 Model**.
+- [x] **Documentação Arquitetural:** Diagramas C4 Model e Relatório de Evolução da Arquitetura ([Acesse aqui](./docs/DOCUMENTACAO_ARQUITETURA.md)).
+
+---
+
+## 📚 Documentação e Relatório Arquitetural
+
+Para acessar a análise detalhada da arquitetura atual, proposta de evolução (Load Balancer, Redis Cluster, Read Replicas) e justificativa das táticas operacionais:
+
+* 🇧🇷 [Relatório de Otimização da Arquitetura (Português)](./docs/DOCUMENTACAO_ARQUITETURA.md)
+* 🇺🇸 [Architecture Optimization Report (English)](./docs/ARCHITECTURE_OPTIMIZATION.md)
 
 ---
 
@@ -264,6 +275,7 @@ DATABASE_URL="postgresql://seu-usuario:sua-senha@seu-host:5432/seu-banco?schema=
 MONGO_URI="mongodb://seu-usuario:sua-senha@seu-host:27017/seu-banco?authSource=admin"
 
 JWT_SECRET="sua-chave-secreta"
+
 ```
 
 ### 2. Subir Infraestrutura (Docker Compose)
@@ -315,4 +327,5 @@ npm run test:cov
 
 ## 📝 Licença
 
-Este projeto está sob a licença [MIT](https://www.google.com/search?q=LICENSE).
+Este projeto está sob a licença [MIT](https://opensource.org/licenses/MIT).
+
