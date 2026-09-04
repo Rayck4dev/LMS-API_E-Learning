@@ -4,39 +4,24 @@ import {
   ExecutionContext,
   CallHandler,
   BadRequestException,
-  ConflictException,
 } from '@nestjs/common';
-import { Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
-
-const idempotencyCache = new Map<string, any>();
+import { Observable } from 'rxjs';
 
 @Injectable()
 export class IdempotencyInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
 
-    // Aplica a validação em rotas de criação (POST)
+    // Aplica a validação apenas em métodos POST
     if (request.method === 'POST') {
       const idempotencyKey = request.headers['idempotency-key'];
 
+      // Se a chave não for enviada, lança erro de validação (400) em vez de estourar 500
       if (!idempotencyKey) {
         throw new BadRequestException(
-          'O cabeçalho Idempotency-Key é obrigatório para esta operação.',
+          'O cabeçalho "idempotency-key" é obrigatório para esta operação.',
         );
       }
-
-      if (idempotencyCache.has(idempotencyKey as string)) {
-        throw new ConflictException(
-          'Requisição duplicada: esta operação já foi executada com a mesma Idempotency-Key.',
-        );
-      }
-
-      return next.handle().pipe(
-        tap((responseBody) => {
-          idempotencyCache.set(idempotencyKey as string, responseBody);
-        }),
-      );
     }
 
     return next.handle();
