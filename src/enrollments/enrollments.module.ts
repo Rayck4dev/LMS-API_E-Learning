@@ -6,16 +6,26 @@ import {
   Enrollment,
   EnrollmentSchema,
 } from '../courses/schemas/enrollment.schema';
+import { PrismaModule } from '../prisma/prisma.module';
 import { CoursesModule } from '../courses/courses.module';
+import { FreeEnrollmentStrategy } from './strategies/free-enrollment.strategy';
+import { PaidEnrollmentStrategy } from './strategies/paid-enrollment.strategy';
+import { EnrollmentListener } from './listeners/enrollment.listener';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Enrollment.name, schema: EnrollmentSchema },
     ]),
+    PrismaModule,
     CoursesModule,
   ],
   controllers: [EnrollmentsController],
-  providers: [EnrollmentsService],
+  providers: [
+    EnrollmentsService,
+    FreeEnrollmentStrategy,
+    PaidEnrollmentStrategy,
+    EnrollmentListener,
+  ],
 })
 export class EnrollmentsModule {}

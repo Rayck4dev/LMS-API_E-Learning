@@ -13,7 +13,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    // Esse retorno é o que se torna o 'req.user' no RolesGuard!
     return { id: payload.sub, email: payload.email, role: payload.role };
   }
 }

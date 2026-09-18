@@ -10,8 +10,6 @@
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white" alt="Prisma" />
   <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
-  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
-  <img src="https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white" alt="Nginx" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" alt="Swagger" />
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License MIT" />
@@ -21,7 +19,7 @@
 
 ## 📖 Sobre o Projeto
 
-API RESTful escalável para gerenciamento de cursos, alunos e matrículas desenvolvida com **NestJS**. O projeto implementa uma **Arquitetura em Camadas** combinada com **Persistência Poliglota** (_Polyglot Persistence_), utilizando **PostgreSQL** para dados transacionais e **MongoDB** para dados dinâmicos.
+API RESTful escalável para gerenciamento de cursos, alunos e matrículas desenvolvida com **NestJS**. O projeto implementa uma **Arquitetura em Camadas** combinada com **Persistência Poliglota** (*Polyglot Persistence*), utilizando **PostgreSQL** para dados transacionais e **MongoDB** para dados dinâmicos.
 
 ---
 
@@ -29,16 +27,39 @@ API RESTful escalável para gerenciamento de cursos, alunos e matrículas desenv
 
 Abaixo está o mapeamento dos requisitos solicitados para a entrega:
 
-- [x] **Arquitetura Definida:** Arquitetura em Camadas (Controllers, Services, Repositories/Models).
-- [x] **Modelagem de Dados:** Estrutura relacional (PostgreSQL) e não-relacional (MongoDB) integrada.
-- [x] **Autenticação e Autorização:** JWT com controle de acesso baseado em papéis (RBAC - _STUDENT vs INSTRUCTOR_).
-- [x] **Resiliência e Idempotência:** Exigência do cabeçalho `idempotency-key` em rotas `POST` críticas.
-- [x] **Tratamento Global de Exceções:** Exception Filter padronizando respostas em **RFC 7807 (Problem Details)**.
-- [x] **Observabilidade Básica:** Interceptor de logs estruturados em JSON com rastreamento via `Correlation-ID`.
-- [x] **Controle de Vazão:** _Rate Limiting_ ativado em rotas de autenticação e rotas públicas.
-- [x] **Contrato de API:** Documentação viva via **OpenAPI / Swagger** acessível em `/api/docs`.
-- [x] **Infraestrutura como Código:** `docker-compose.yml` para subida da API e dos bancos com um único comando.
-- [x] **Documentação Arquitetural:** Diagramas C4 Model e Relatório de Evolução da Arquitetura ([Acesse aqui](./docs/DOCUMENTACAO_ARQUITETURA.md)).
+* [x] **Arquitetura Definida:** Arquitetura em Camadas (Controllers, Services, Repositories/Models).
+* [x] **Modelagem de Dados:** Estrutura relacional (PostgreSQL) e não-relacional (MongoDB) integrada.
+* [x] **Autenticação e Autorização:** JWT com controle de acesso baseado em papéis (RBAC - *STUDENT vs INSTRUCTOR*).
+* [x] **Padrões de Projeto (Design Patterns):** Implementação dos padrões Singleton, Strategy e Observer.
+* [x] **Resiliência e Idempotência:** Exigência do cabeçalho `idempotency-key` em rotas `POST` críticas.
+* [x] **Tratamento Global de Exceções:** Exception Filter padronizando respostas em **RFC 7807 (Problem Details)**.
+* [x] **Observabilidade Básica:** Interceptor de logs estruturados em JSON com rastreamento via `Correlation-ID`.
+* [x] **Controle de Vazão:** *Rate Limiting* ativado em rotas de autenticação e rotas públicas.
+* [x] **Contrato de API:** Documentação viva via **Swagger** acessível em `/api/docs`.
+* [x] **Infraestrutura como Código:** `docker-compose.yml` para subida da API e dos bancos com um único comando.
+* [x] **Documentação Arquitetural:** Diagramas C4 Model e Relatório de Evolução da Arquitetura ([Acesse aqui](/docs/DOCUMENTACAO_ARQUITETURA.md)).
+
+---
+
+## 🎨 Padrões de Projeto (Design Patterns)
+
+A API implementa três padrões de projeto para garantir escalabilidade, desacoplamento e facilidade de manutenção:
+
+* **Singleton (`LMSConfigSingleton`):**
+* **Problema:** Evitar a recriação desnecessária de objetos de configuração global na memória a cada requisição.
+* **Solução:** Centraliza as configurações do sistema (limite de uploads, regras globais) em uma instância única acessível globalmente via `getInstance()`. Acessível no endpoint `GET /system-config`.
+
+
+* **Strategy (`EnrollmentStrategy`):**
+* **Problema:** Evitar o acoplamento de múltiplas condicionais (`if/else`) para diferentes fluxos de matrícula.
+* **Solução:** Define a interface `EnrollmentStrategy` com estratégias concretas isoladas (`FreeEnrollmentStrategy` e `PaidEnrollmentStrategy`). O `EnrollmentsService` seleciona a estratégia em tempo de execução sem alterar a lógica principal.
+
+
+* **Observer (`@nestjs/event-emitter`):**
+* **Problema:** Executar tarefas secundárias (envio de e-mails de boas-vindas, registro de métricas/analytics) sem travar ou poluir o fluxo de criação da matrícula.
+* **Solução:** O `EnrollmentsService` atua como emissor (Subject) disparando o evento `enrollment.created`. Os ouvintes (Observers) decorados com `@OnEvent()` reagem de forma assíncrona e desacoplada.
+
+
 
 ---
 
@@ -54,13 +75,14 @@ Para acessar a análise detalhada da arquitetura atual, proposta de evolução (
 ## 🚀 Endpoints Principais & Controle de Acesso (RBAC)
 
 | Módulo | Método | Endpoint | Acesso | Descrição |
-| :--- | :--- | :--- | :--- | :--- |
+| --- | --- | --- | --- | --- |
 | **Auth** | `POST` | `/auth/login` | Público | Autentica usuário e retorna o Token JWT |
 | **Users** | `POST` | `/users` | Público | Cadastra um novo usuário no PostgreSQL (`STUDENT` / `INSTRUCTOR`) |
 | **Users** | `GET` | `/users` | Autenticado | Lista todos os usuários cadastrados |
 | **Courses** | `POST` | `/courses` | `INSTRUCTOR` | Cria um novo curso (Exige `idempotency-key`) |
 | **Courses** | `GET` | `/courses` | Público | Lista todos os cursos disponíveis |
-| **Enrollments** | `POST` | `/enrollments` | Autenticado | Matricula um aluno em um curso (Exige `idempotency-key`) |
+| **Enrollments** | `POST` | `/enrollments` | Autenticado | Processa e realiza a matrícula (Aplica Strategy e dispara Observers) |
+| **Config** | `GET` | `/system-config` | Público | **[Singleton]** Retorna as configurações globais unificadas da plataforma |
 | **Health** | `GET` | `/` | Público | Endpoint de Health Check da API |
 
 ---
@@ -305,7 +327,7 @@ npm run start:dev
 
 Após iniciar a aplicação, acesse o contrato interativo da API no navegador:
 
-* 🔗 `http://localhost:3000/api/docs`
+* 🔗 `http://localhost:3333/api/docs`
 
 ---
 
@@ -328,4 +350,3 @@ npm run test:cov
 ## 📝 Licença
 
 Este projeto está sob a licença [MIT](https://opensource.org/licenses/MIT).
-

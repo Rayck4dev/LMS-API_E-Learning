@@ -1,5 +1,4 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-// @ts-ignore
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
@@ -18,7 +17,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       throw new Error('DATABASE_URL não definida no .env');
     }
 
-    // Extrai as credenciais da string usando URL parser nativo do Node.js
     const parsedUrl = new URL(dbUrl);
 
     const pool = new Pool({

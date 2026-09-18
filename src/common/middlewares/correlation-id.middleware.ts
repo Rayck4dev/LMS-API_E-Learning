@@ -10,7 +10,6 @@ export class CorrelationIdMiddleware implements NestMiddleware {
     const correlationId =
       (req.headers['x-correlation-id'] as string) || randomUUID();
 
-    // Injeta nos headers da requisição e da resposta
     req.headers['x-correlation-id'] = correlationId;
     res.setHeader('X-Correlation-ID', correlationId);
 
@@ -19,7 +18,6 @@ export class CorrelationIdMiddleware implements NestMiddleware {
     res.on('finish', () => {
       const duration = Date.now() - startTime;
 
-      // Log Estruturado em JSON
       const logData = {
         correlationId,
         method: req.method,

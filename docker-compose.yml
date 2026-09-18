@@ -37,7 +37,7 @@ services:
       dockerfile: Dockerfile
     container_name: lms_api
     ports:
-      - '3000:3000'
+      - '3333:3000'
     environment:
       DATABASE_URL: ${DATABASE_URL}
       MONGO_URI: ${MONGO_URI}

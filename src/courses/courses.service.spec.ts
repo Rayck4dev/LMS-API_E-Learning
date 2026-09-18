@@ -6,7 +6,6 @@ import { Course } from './schemas/course.schema';
 describe('CoursesService', () => {
   let service: CoursesService;
 
-  // Mock de classe para simular o construtor do Mongoose
   class MockCourseModel {
     constructor(private dto: any) {
       Object.assign(this, dto);

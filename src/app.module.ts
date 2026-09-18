@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 import { PrismaModule } from './prisma/prisma.module';
 import { CoursesModule } from './courses/courses.module';
@@ -12,10 +13,14 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
 
 import { CorrelationIdMiddleware } from './common/middlewares/correlation-id.middleware';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
+import { ConfigController } from './common/config/config.controller';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    EventEmitterModule.forRoot(),
     MongooseModule.forRoot(
       process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/lms',
     ),
@@ -31,7 +36,8 @@ import { IdempotencyInterceptor } from './common/interceptors/idempotency.interc
     AuthModule,
     EnrollmentsModule,
   ],
-  providers: [
+  controllers: [ConfigController, AppController], 
+  providers: [AppService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

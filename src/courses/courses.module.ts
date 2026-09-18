@@ -6,7 +6,6 @@ import { Course, CourseSchema } from './schemas/course.schema';
 
 @Module({
   imports: [
-    // Registra a coleção 'courses' do MongoDB dentro deste módulo
     MongooseModule.forFeature([{ name: Course.name, schema: CourseSchema }]),
   ],
   controllers: [CoursesController],

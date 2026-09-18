@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   Enrollment,
   EnrollmentDocument,
@@ -13,15 +14,28 @@ import {
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CoursesService } from '../courses/courses.service';
+import { FreeEnrollmentStrategy } from './strategies/free-enrollment.strategy';
+import { PaidEnrollmentStrategy } from './strategies/paid-enrollment.strategy';
+import { EnrollmentStrategy } from './strategies/enrollment-strategy.interface';
 
 @Injectable()
 export class EnrollmentsService {
+  private strategies: Record<string, EnrollmentStrategy>;
+
   constructor(
     @InjectModel(Enrollment.name)
     private enrollmentModel: Model<EnrollmentDocument>,
     private readonly prisma: PrismaService,
     private readonly coursesService: CoursesService,
-  ) {}
+    private readonly eventEmitter: EventEmitter2,
+    private readonly freeStrategy: FreeEnrollmentStrategy,
+    private readonly paidStrategy: PaidEnrollmentStrategy,
+  ) {
+    this.strategies = {
+      FREE: this.freeStrategy,
+      PAID: this.paidStrategy,
+    };
+  }
 
   async create(createEnrollmentDto: CreateEnrollmentDto) {
     const { studentId, courseId } = createEnrollmentDto;
@@ -50,8 +64,16 @@ export class EnrollmentsService {
       throw new ConflictException('Aluno já está matriculado neste curso');
     }
 
+    const strategyType = 'FREE';
+    const strategy = this.strategies[strategyType];
+    await strategy.processEnrollment(studentId, courseId);
+
     const enrollment = new this.enrollmentModel({ studentId, courseId });
-    return enrollment.save();
+    const savedEnrollment = await enrollment.save();
+
+    this.eventEmitter.emit('enrollment.created', { studentId, courseId });
+
+    return savedEnrollment;
   }
 
   async findAll() {
