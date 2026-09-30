@@ -9,7 +9,6 @@ RUN npm install
 
 COPY . .
 
-# Dummy URL genérica para passar no 'npx prisma generate' no build sem expor senhas reais
 ENV DATABASE_URL="postgresql://user:password@localhost:5432/db"
 
 RUN npx prisma generate
