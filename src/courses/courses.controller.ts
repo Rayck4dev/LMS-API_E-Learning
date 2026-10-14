@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -22,6 +23,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 @ApiTags('courses')
 @ApiBearerAuth()
@@ -48,7 +50,9 @@ export class CoursesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lista todos os cursos' })
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30000)
+  @ApiOperation({ summary: 'Lista todos os cursos (Com Cache Redis)' })
   findAll() {
     return this.coursesService.findAll();
   }

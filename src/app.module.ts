@@ -10,12 +10,15 @@ import { CoursesModule } from './courses/courses.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
-
+import { StorageModule } from './storage/storage.module';
 import { CorrelationIdMiddleware } from './common/middlewares/correlation-id.middleware';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
 import { ConfigController } from './common/config/config.controller';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { HealthModule } from './health/health.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-redis-yet';
 
 @Module({
   imports: [
@@ -30,11 +33,25 @@ import { AppService } from './app.service';
         limit: 10,
       },
     ]),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      useFactory: async () => {
+        const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+        return {
+          store: redisStore,
+          url: redisUrl,
+          ttl: 60 * 60 * 1000,
+        };
+      },
+    }),
     PrismaModule,
     CoursesModule,
     UsersModule,
     AuthModule,
     EnrollmentsModule,
+    StorageModule,
+    HealthModule
   ],
   controllers: [ConfigController, AppController], 
   providers: [AppService,
