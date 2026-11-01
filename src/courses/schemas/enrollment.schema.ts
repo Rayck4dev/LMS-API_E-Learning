@@ -13,6 +13,9 @@ export class Enrollment {
 
   @Prop({ default: 'ACTIVE' })
   status: string;
+
+  @Prop({ default: 0, min: 0, max: 100 })
+  progressPercent: number;
 }
 
 export const EnrollmentSchema = SchemaFactory.createForClass(Enrollment);

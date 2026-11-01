@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateCourseDto {
   @ApiProperty({
@@ -18,11 +18,11 @@ export class CreateCourseDto {
   @IsNotEmpty({ message: 'A descrição é obrigatória' })
   description: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'uuid-do-instrutor-123',
-    description: 'ID do instrutor (vindo do Postgres)',
+    description: 'Ignorado; o instrutor é identificado pelo JWT',
   })
   @IsUUID('4', { message: 'O ID do instrutor deve ser um UUID v4 válido' })
-  @IsNotEmpty({ message: 'O ID do instrutor é obrigatório' })
-  instructorId: string;
+  @IsOptional()
+  instructorId?: string;
 }

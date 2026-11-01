@@ -1,23 +1,26 @@
-# 🏛️ Arquitetura e Padrões de Projeto
+# Arquitetura e padrões
 
-## Persistência Poliglota e Cache
+## Persistência
 
-O sistema utiliza uma abordagem robusta combinando bancos transacionais, orientados a documentos e armazenamento em memória:
+- PostgreSQL e Prisma armazenam usuários e dados relacionais.
+- MongoDB e Mongoose armazenam cursos e matrículas.
+- Redis é configurado como backend de cache; o catálogo de cursos permite cache HTTP.
 
-- **PostgreSQL (Relacional):** Utilizado para **Usuários** e **Autenticação**, garantindo propriedades **ACID**, consistência estrita e integridade referencial via Prisma ORM.
-- **MongoDB (Non-Relational):** Utilizado para **Cursos** e **Matrículas**, oferecendo flexibilidade de esquema para conteúdos dinâmicos e escalabilidade horizontal via Mongoose.
-- **Redis (In-Memory / Cache):** Utilizado como camada de cache de alta performance (`cache-manager-redis-yet`) e motor de controle para validação de requisições idempotentes.
+## Organização da aplicação
 
----
+- Controllers recebem e validam HTTP/DTOs e delegam regras aos services.
+- Services aplicam regras de negócio, autorização por titularidade e persistência.
+- Guards validam identidade JWT e papéis exigidos nas rotas.
+- DTOs separados definem campos aceitos para cadastro, atualização e busca.
 
-## Padrões de Projeto (Design Patterns)
+## Padrões presentes
 
-1. **Singleton (`LMSConfigSingleton`):**
-   - **Objetivo:** Centralizar configurações globais do sistema em instância única na memória.
-   - **Uso:** Acessível via endpoint de configuração para gerenciar parâmetros da plataforma de forma consistente.
+- **Strategy:** estratégias de matrícula gratuita e paga.
+- **Observer:** eventos de matrícula desacoplam logs e tarefas secundárias.
+- **Singleton:** `LMSConfigSingleton` mantém configuração em memória.
+- **Provider:** `StorageProvider` desacopla a API do Supabase Storage.
+- **Progresso de aprendizagem:** cada matrícula mantém percentual de 0 a 100 e status `ACTIVE`/`COMPLETED`.
 
-2. **Strategy (`EnrollmentStrategy`):**
-   - **Objetivo:** Isolar regras de negócio complexas de matrícula (ex: cursos gratuitos vs. pagos) eliminando condicionais (`if/else`) aninhadas no serviço.
+## Senhas existentes
 
-3. **Observer (`@nestjs/event-emitter`):**
-   - **Objetivo:** Desacoplar tarefas secundárias (como envio de notificações e logs de auditoria) do fluxo principal de criação de matrículas através de eventos assíncronos.
+Novos cadastros usam bcrypt. Para manter compatibilidade com contas criadas pela versão anterior, um login válido com senha legada substitui o valor em texto puro pelo hash bcrypt. Não é necessário resetar todas as senhas para aplicar essa mudança.

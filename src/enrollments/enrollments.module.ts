@@ -11,6 +11,7 @@ import { CoursesModule } from '../courses/courses.module';
 import { FreeEnrollmentStrategy } from './strategies/free-enrollment.strategy';
 import { PaidEnrollmentStrategy } from './strategies/paid-enrollment.strategy';
 import { EnrollmentListener } from './listeners/enrollment.listener';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { EnrollmentListener } from './listeners/enrollment.listener';
     FreeEnrollmentStrategy,
     PaidEnrollmentStrategy,
     EnrollmentListener,
+    RolesGuard,
   ],
 })
 export class EnrollmentsModule {}

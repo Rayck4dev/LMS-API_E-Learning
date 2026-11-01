@@ -6,6 +6,8 @@ import {
   Param,
   Patch,
   Post,
+  Query,
+  Req,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -16,45 +18,43 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { Request } from 'express';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { CoursesService } from './courses.service';
+import { CourseRequester, CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
+import { ListCoursesDto } from './dto/list-courses.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+
+type AuthenticatedRequest = Request & { user: CourseRequester };
 
 @ApiTags('courses')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('courses')
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   @Post()
-  @Roles('INSTRUCTOR')
-  @ApiOperation({ summary: 'Cria um novo curso (Apenas Instrutores)' })
-  @ApiHeader({
-    name: 'idempotency-key',
-    description: 'Chave única para garantir a idempotência da requisição',
-    required: true,
-  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('INSTRUCTOR', 'ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cria um curso para o instrutor autenticado' })
+  @ApiHeader({ name: 'idempotency-key', required: true })
   @ApiResponse({ status: 201, description: 'Curso criado com sucesso.' })
-  @ApiResponse({
-    status: 403,
-    description: 'Acesso negado: apenas instrutores podem criar cursos.',
-  })
-  create(@Body() createCourseDto: CreateCourseDto) {
-    return this.coursesService.create(createCourseDto);
+  create(
+    @Body() createCourseDto: CreateCourseDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.coursesService.create(createCourseDto, request.user);
   }
 
   @Get()
   @UseInterceptors(CacheInterceptor)
-  @CacheTTL(30000)
-  @ApiOperation({ summary: 'Lista todos os cursos (Com Cache Redis)' })
-  findAll() {
-    return this.coursesService.findAll();
+  @CacheTTL(30_000)
+  @ApiOperation({ summary: 'Lista cursos com busca, filtro e paginação opcionais' })
+  findAll(@Query() filters: ListCoursesDto) {
+    return this.coursesService.findAll(filters);
   }
 
   @Get(':id')
@@ -64,16 +64,24 @@ export class CoursesController {
   }
 
   @Patch(':id')
-  @Roles('INSTRUCTOR')
-  @ApiOperation({ summary: 'Atualiza um curso (Apenas Instrutores)' })
-  update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
-    return this.coursesService.update(id, updateCourseDto);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('INSTRUCTOR', 'ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualiza um curso próprio (ou qualquer curso como ADMIN)' })
+  update(
+    @Param('id') id: string,
+    @Body() updateCourseDto: UpdateCourseDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.coursesService.update(id, updateCourseDto, request.user);
   }
 
   @Delete(':id')
-  @Roles('INSTRUCTOR')
-  @ApiOperation({ summary: 'Remove um curso (Apenas Instrutores)' })
-  remove(@Param('id') id: string) {
-    return this.coursesService.remove(id);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('INSTRUCTOR', 'ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove um curso próprio (ou qualquer curso como ADMIN)' })
+  remove(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.coursesService.remove(id, request.user);
   }
 }

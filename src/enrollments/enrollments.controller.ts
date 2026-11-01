@@ -1,10 +1,12 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -14,9 +16,15 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { EnrollmentsService } from './enrollments.service';
-import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
+import { Request } from 'express';
+import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { EnrollmentsService, EnrollmentRequester } from './enrollments.service';
+import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
+import { UpdateProgressDto } from './dto/update-progress.dto';
+
+type AuthenticatedRequest = Request & { user: EnrollmentRequester };
 
 @ApiTags('Enrollments')
 @ApiBearerAuth()
@@ -26,79 +34,61 @@ export class EnrollmentsController {
   constructor(private readonly enrollmentsService: EnrollmentsService) {}
 
   @Post()
-  @ApiOperation({
-    summary: 'Realiza a matrícula de um aluno em um curso',
-    description:
-      'Cria um novo registro de matrícula associando o ID do aluno (PostgreSQL) ao ID do curso (MongoDB). Requisição protegida e idempotente.',
-  })
-  @ApiHeader({
-    name: 'idempotency-key',
-    description: 'Chave única para garantir a idempotência da requisição',
-    required: true,
-    schema: { type: 'string', default: 'enrollment-key-123' },
-  })
+  @ApiOperation({ summary: 'Matricula o estudante autenticado em um curso' })
+  @ApiHeader({ name: 'idempotency-key', required: true })
   @ApiResponse({ status: 201, description: 'Matrícula efetuada com sucesso.' })
-  @ApiResponse({
-    status: 400,
-    description: 'Dados de entrada inválidos ou inexistentes.',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Não autorizado. Token JWT ausente ou inválido.',
-  })
-  @ApiResponse({
-    status: 409,
-    description:
-      'Conflito. Operação já processada (Idempotência) ou aluno já matriculado.',
-  })
-  create(@Body() createEnrollmentDto: CreateEnrollmentDto) {
-    return this.enrollmentsService.create(createEnrollmentDto);
+  create(
+    @Body() createEnrollmentDto: CreateEnrollmentDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.enrollmentsService.create(createEnrollmentDto, request.user);
   }
 
   @Get()
-  @ApiOperation({
-    summary: 'Lista todas as matrículas cadastradas',
-    description:
-      'Retorna uma listagem completa de todas as matrículas realizadas no sistema.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de matrículas retornada com sucesso.',
-  })
-  @ApiResponse({ status: 401, description: 'Não autorizado.' })
-  findAll() {
-    return this.enrollmentsService.findAll();
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Lista todas as matrículas (apenas ADMIN)' })
+  findAll(@Req() request: AuthenticatedRequest) {
+    return this.enrollmentsService.findAll(request.user);
   }
 
   @Get('student/:studentId')
+  @ApiOperation({ summary: 'Lista matrículas próprias ou de qualquer aluno como ADMIN' })
+  findByStudent(
+    @Param('studentId') studentId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.enrollmentsService.findByStudent(studentId, request.user);
+  }
+
+  @Get('course/:courseId')
   @ApiOperation({
-    summary: 'Busca as matrículas de um aluno específico',
-    description:
-      'Retorna a lista de cursos em que o aluno informado pelo UUID está matriculado.',
+    summary: 'Lista matrículas do curso próprio do instrutor ou qualquer curso como ADMIN',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Matrículas do aluno encontradas com sucesso.',
-  })
-  @ApiResponse({ status: 401, description: 'Não autorizado.' })
-  @ApiResponse({
-    status: 404,
-    description: 'Aluno não encontrado ou sem matrículas.',
-  })
-  findByStudent(@Param('studentId') studentId: string) {
-    return this.enrollmentsService.findByStudent(studentId);
+  findByCourse(
+    @Param('courseId') courseId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.enrollmentsService.findByCourse(courseId, request.user);
   }
 
   @Delete(':id')
-  @ApiOperation({
-    summary: 'Cancela uma matrícula existente',
-    description:
-      'Remove o registro da matrícula correspondente ao ID informado.',
-  })
-  @ApiResponse({ status: 200, description: 'Matrícula cancelada com sucesso.' })
-  @ApiResponse({ status: 401, description: 'Não autorizado.' })
-  @ApiResponse({ status: 404, description: 'Matrícula não encontrada.' })
-  remove(@Param('id') id: string) {
-    return this.enrollmentsService.remove(id);
+  @ApiOperation({ summary: 'Cancela matrícula própria ou qualquer matrícula como ADMIN' })
+  remove(@Param('id') id: string, @Req() request: AuthenticatedRequest) {
+    return this.enrollmentsService.remove(id, request.user);
+  }
+
+  @Patch(':id/progress')
+  @ApiOperation({ summary: 'Atualiza o progresso da própria matrícula (0 a 100%)' })
+  updateProgress(
+    @Param('id') id: string,
+    @Body() updateProgressDto: UpdateProgressDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.enrollmentsService.updateProgress(
+      id,
+      updateProgressDto,
+      request.user,
+    );
   }
 }

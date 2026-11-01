@@ -29,7 +29,7 @@ import * as redisStore from 'cache-manager-redis-yet';
     ),
     ThrottlerModule.forRoot([
       {
-        ttl: 60000,
+        ttl: 60_000,
         limit: 10,
       },
     ]),

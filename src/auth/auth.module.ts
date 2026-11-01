@@ -11,7 +11,7 @@ import { JwtStrategy } from '../common/guards/jwt.strategy';
     UsersModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'chave-secreta-lms-api',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
   ],

@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { StorageProvider } from '../interfaces/storage-provider.interface';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class SupabaseStorageProvider implements StorageProvider {
@@ -26,8 +27,11 @@ export class SupabaseStorageProvider implements StorageProvider {
     file: Express.Multer.File,
     folder: string = 'general',
   ): Promise<{ url: string; key: string }> {
-    const fileExt = file.originalname.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const fileExt = file.originalname.split('.').pop()?.toLowerCase();
+    if (!fileExt) {
+      throw new InternalServerErrorException('Extensão de arquivo inválida.');
+    }
+    const fileName = `${randomUUID()}.${fileExt}`;
     const filePath = `${folder}/${fileName}`;
 
     const { data, error } = await this.supabase.storage
@@ -39,7 +43,7 @@ export class SupabaseStorageProvider implements StorageProvider {
 
     if (error) {
       throw new InternalServerErrorException(
-        `Erro ao enviar arquivo para o Supabase: ${error.message}`,
+        'Falha ao enviar o arquivo para o armazenamento.',
       );
     }
 
