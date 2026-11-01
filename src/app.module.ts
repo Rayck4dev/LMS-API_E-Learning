@@ -1,5 +1,4 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -24,9 +23,6 @@ import * as redisStore from 'cache-manager-redis-yet';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     EventEmitterModule.forRoot(),
-    MongooseModule.forRoot(
-      process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/lms',
-    ),
     ThrottlerModule.forRoot([
       {
         ttl: 60_000,
@@ -51,10 +47,11 @@ import * as redisStore from 'cache-manager-redis-yet';
     AuthModule,
     EnrollmentsModule,
     StorageModule,
-    HealthModule
+    HealthModule,
   ],
-  controllers: [ConfigController, AppController], 
-  providers: [AppService,
+  controllers: [ConfigController, AppController],
+  providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
