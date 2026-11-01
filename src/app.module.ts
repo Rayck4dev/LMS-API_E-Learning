@@ -1,8 +1,9 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { MongooseModule } from '@nestjs/mongoose';
 
 import { PrismaModule } from './prisma/prisma.module';
 import { CoursesModule } from './courses/courses.module';
@@ -22,6 +23,13 @@ import * as redisStore from 'cache-manager-redis-yet';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        uri: config.getOrThrow<string>('MONGO_URI'),
+      }),
+    }),
     EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot([
       {
@@ -32,11 +40,16 @@ import * as redisStore from 'cache-manager-redis-yet';
     CacheModule.registerAsync({
       isGlobal: true,
       imports: [ConfigModule],
-      useFactory: async () => {
-        const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => {
+        const redisUrl = config.get<string>('REDIS_URL');
+        if (!redisUrl && config.get<string>('NODE_ENV') === 'production') {
+          throw new Error('REDIS_URL deve estar configurada em produção.');
+        }
+
         return {
           store: redisStore,
-          url: redisUrl,
+          url: redisUrl || 'redis://localhost:6379',
           ttl: 60 * 60 * 1000,
         };
       },

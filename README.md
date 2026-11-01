@@ -70,6 +70,8 @@ SUPABASE_STORAGE_BUCKET=seu-bucket
 
 ```
 
+`MONGO_URI` é obrigatória: a API usa MongoDB para cursos e matrículas e abre essa conexão ao iniciar. Em produção, configure também `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` no serviço de hospedagem, sem enviar o arquivo `.env` ao repositório.
+
 ### 2. Subir Infraestrutura (Docker Compose)
 
 Suba a API e os bancos de dados (PostgreSQL + MongoDB + Redis) com um único comando:
