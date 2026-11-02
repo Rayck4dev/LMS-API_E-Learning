@@ -6,10 +6,12 @@ import {
   MemoryHealthIndicator,
   DiskHealthIndicator,
 } from '@nestjs/terminus';
+import { SkipThrottle } from '@nestjs/throttler';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('Health Check')
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   constructor(
