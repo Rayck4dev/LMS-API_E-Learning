@@ -143,16 +143,16 @@ C4Container
     Person(user, "Usuário", "Aluno / Instrutor")
 
     System_Boundary(c1, "Escopo da LMS API") {
-        Container(api, "API (NestJS)", "Node.js + NestJS", "Regras de negócio, Auth, Idempotência e Cache")
+        Container(api, "API (NestJS)", "Node.js + NestJS", "Regras de negócio, Auth, validação do cabeçalho de idempotência e Cache")
         ContainerDb(postgres, "PostgreSQL", "Relational DB", "Usuários e Autenticação")
         ContainerDb(mongo, "MongoDB", "NoSQL DB", "Cursos e Matrículas")
-        ContainerDb(redis, "Redis", "In-Memory DB", "Cache de Alta Performance e Idempotency Keys")
+        ContainerDb(redis, "Redis", "In-Memory DB", "Cache")
     }
 
     Rel(user, api, "HTTP REST", "HTTPS")
     Rel(api, postgres, "Persiste Usuários", "Prisma ORM")
     Rel(api, mongo, "Persiste Cursos e Matrículas", "Mongoose")
-    Rel(api, redis, "Gerencia Cache / Idempotência", "cache-manager-redis-yet")
+    Rel(api, redis, "Gerencia Cache", "cache-manager-redis-yet")
 ```
 
 ---
@@ -167,7 +167,7 @@ C4Component
         Component(users, "Users / Auth", "Module", "Login, JWT e RBAC")
         Component(courses, "Courses", "Module", "Gestão de Cursos")
         Component(enrollments, "Enrollments", "Module", "Matrículas (Strategy & Observers)")
-        Component(infra, "Core / Infra", "Filter, Interceptor & Middleware", "RFC 7807, Correlation-ID, Idempotência e Cache")
+        Component(infra, "Core / Infra", "Filter, Interceptor & Middleware", "RFC 7807, Correlation-ID, validação do cabeçalho de idempotência e Cache")
     }
 
     ContainerDb(postgres, "PostgreSQL", "SQL DB", "Tabela Users")

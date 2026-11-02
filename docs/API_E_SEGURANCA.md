@@ -30,7 +30,7 @@ Exemplo: `GET /courses?search=nestjs&page=1&limit=20`.
 
 ## Resiliência e observabilidade
 
-- O interceptor global ainda exige `idempotency-key` em todos os métodos `POST`. Atualmente ele valida apenas a presença do cabeçalho; não armazena respostas nem impede duplicatas por chave.
+- O interceptor global exige `idempotency-key` em todos os métodos `POST`. Atualmente ele valida apenas a presença do cabeçalho; não armazena respostas nem impede duplicatas por chave.
 - As matrículas verificam duplicidade antes da gravação e convertem erro de índice único do MongoDB em `409 Conflict`, caso exista índice único configurado.
 - Erros HTTP passam pelo filtro global Problem Details.
 - O middleware adiciona e registra `X-Correlation-ID`.
