@@ -39,7 +39,7 @@ export class RolesGuard implements CanActivate {
 
     if (!hasRole) {
       throw new ForbiddenException(
-        'Acesso negado: apenas instrutores podem criar cursos.',
+        `Acesso negado: esta operação requer um dos seguintes perfis: ${requiredRoles.join(', ')}.`,
       );
     }
 
